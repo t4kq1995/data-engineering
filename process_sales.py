@@ -12,7 +12,7 @@ from airflow.operators.python_operator import PythonOperator
 default_args = {
     'owner': 'airflow',
     'start_date': datetime(2022, 9, 1),
-    'end_date': datetime(2022, 9, 1),
+    'end_date': datetime(2022, 9, 30),
     'retries': 1,
     'retry_delay': timedelta(minutes=5),
     'catchup': True,
@@ -85,15 +85,26 @@ copy_files_to_bronze = GoogleCloudStorageToBigQueryOperator(
 # --- Modify data to silver table ---
 # -----------------------------------------------------------------------------
 sql_query = """
-CREATE OR REPLACE TABLE `de2023-vlad-nebesniuk.silver.sales`
-    AS
-    SELECT
-        CustomerId as client_id,
-        PurchaseDate as purchase_date,
-        Product as product_name,
-        REGEXP_REPLACE(Price, r'\$', '') AS price
-    FROM
+INSERT INTO `de2023-vlad-nebesniuk.silver.sales`
+SELECT
+    CAST(CustomerId AS INTEGER) AS client_id,
+    CAST(REPLACE(PurchaseDate, '/', '-') AS DATE) AS purchase_date,
+    Product as product_name,
+    CAST(
+        REGEXP_REPLACE(
+            REGEXP_REPLACE(Price, r'\$', ''), 
+            r'USD', ''
+        ) AS INTEGER
+    ) AS price
+FROM
+    (SELECT 
+        CustomerId, 
+        REPLACE(PurchaseDate, 'Aug', '08') as PurchaseDate, 
+        Product, 
+        Price
+    FROM 
         `de2023-vlad-nebesniuk.bronze.sales`
+    ) AS temp_table;
 """
 
 # Define a task to execute the SQL query

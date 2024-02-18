@@ -69,7 +69,7 @@ CREATE OR REPLACE TABLE `de2023-vlad-nebesniuk.silver.user_profiles`
       SPLIT(full_name, " ")[safe_ordinal(1)] AS first_name, 
       SPLIT(full_name, " ")[safe_ordinal(2)] AS last_name, 
       state,
-      birth_date, 
+      CAST(birth_date AS DATE) AS birth_date, 
       fpn.phone_number AS phone_number 
     FROM `de2023-vlad-nebesniuk.bronze.user_profiles`
     LEFT JOIN formatted_phone_number AS fpn ON fpn.email = `de2023-vlad-nebesniuk.bronze.user_profiles`.email;
@@ -83,4 +83,4 @@ execute_sql_task = BigQueryOperator(
     dag=dag
 )
 
-copy_files_to_bronze
+copy_files_to_bronze >> execute_sql_task

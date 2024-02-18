@@ -12,7 +12,7 @@ from airflow.operators.python_operator import PythonOperator
 default_args = {
     'owner': 'airflow',
     'start_date': datetime(2022, 8, 1),
-    'end_date': datetime(2022, 8, 1),
+    'end_date': datetime(2022, 8, 5),
     'retries': 1,
     'retry_delay': timedelta(minutes=5),
     'catchup': True,
@@ -90,15 +90,14 @@ copy_files_to_bronze = GoogleCloudStorageToBigQueryOperator(
 # --- Modify data to silver table ---
 # -----------------------------------------------------------------------------
 sql_query = """
-CREATE OR REPLACE TABLE `de2023-vlad-nebesniuk.silver.customers`
-    AS
+INSERT INTO `de2023-vlad-nebesniuk.silver.customers`
     SELECT
-        Id as client_id,
-        FirstName as first_name,
-        LastName as last_name,
-        Email as email,
-        RegistrationDate as registration_date,
-        State as state
+        CAST(Id AS INTEGER) AS client_id,
+        FirstName AS first_name,
+        LastName AS last_name,
+        Email AS email,
+        CAST(RegistrationDate AS DATE) AS registration_date,
+        State AS state
     FROM
         `de2023-vlad-nebesniuk.bronze.customers`
 """
